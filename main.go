@@ -114,6 +114,21 @@ func checkUploadedFile(w http.ResponseWriter, r *http.Request) (ShortformRespons
 			return nil, err
 		}
 		return resp, nil
+	case "application/json":
+		resp, err := ImportTextOnTop(buf.Bytes())
+		if err != nil {
+			log.Fatal(err)
+			return nil, err
+		}
+		if len(resp) > 0 {
+			return resp, nil
+		} else {
+			resp, err = ImportIllumiType(buf.Bytes())
+			if err != nil {
+				return nil, err
+			}
+			return resp, nil
+		}
 	}
 	return nil, nil
 }

@@ -7,38 +7,35 @@ import (
 	"io/ioutil"
 	"log"
 	"strings"
-	"time"
 
 	"github.com/yeka/zip"
-
-	"github.com/google/uuid"
 )
 
-func ImportTextOnTop(userID string, dat []byte) (map[string][]*Abbreviation, error) {
+func ImportTextOnTop(dat []byte) (ShortformResponse, error) {
 	var totlist textOnTopJSON
-	var ac []*Abbreviation
-	var imported = make(map[string][]*Abbreviation)
+	var ac []string
+	var imported = make(map[string][]string)
 
 	json.Unmarshal(dat, &totlist)
 
 	for abb, word := range totlist.Autocorrect.Default.List {
 		fmt.Println(abb, "=", word)
-		ac = append(ac, &Abbreviation{
-			ID:      uuid.New().String(),
-			Word:    word,
-			Abb:     abb,
-			Creator: userID,
-			Updated: time.Now(),
-		})
+		ac = append(ac, abb+"="+word)
 	}
+
+	if ac == nil {
+		log.Println("Not a text-on-top export")
+		return nil, nil
+	}
+
 	for name, list := range totlist.Shortform {
-		var abbs []*Abbreviation
+		var abbs []string
 		if name == "<default>" {
 			name = "# Förkortningslista (Standard)"
 		}
 		for abb, word := range list.Shortforms {
-			abb := Abbreviation{ID: uuid.New().String(), Word: word, Abb: abb, Creator: userID, Updated: time.Now()}
-			abbs = append(abbs, &abb)
+			abb := abb + "=" + word
+			abbs = append(abbs, abb)
 		}
 		imported[name] = abbs
 	}
@@ -121,10 +118,11 @@ func ParseProtypeDAT(dat []byte) []string {
 	return abbs
 }
 
-func ImportIllumiType(userID string, dat []byte) (map[string][]*Abbreviation, error) {
+func ImportIllumiType(dat []byte) (ShortformResponse, error) {
+	log.Println("Import illumitype lists")
 	var illumiList illumiTypeJSON
 	var listNames = make(map[int]string)
-	var imported = make(map[string][]*Abbreviation)
+	var imported = make(map[string][]string)
 	err := json.Unmarshal(dat, &illumiList)
 	if err != nil {
 		return nil, fmt.Errorf("ImportIllumiType|Couldn't unmarshal:\n%s", err.Error())
@@ -133,8 +131,9 @@ func ImportIllumiType(userID string, dat []byte) (map[string][]*Abbreviation, er
 		listNames[list.ID] = list.Name
 	}
 	for _, abb := range illumiList.Abbreviations {
-		a := Abbreviation{ID: uuid.New().String(), Word: abb.Word, Abb: abb.Abbreviation, Creator: userID, Updated: time.Now(), Remind: true}
-		imported[listNames[abb.ListID]] = append(imported[listNames[abb.ListID]], &a)
+		log.Println(abb)
+		a := abb.Abbreviation + "=" + abb.Word
+		imported[listNames[abb.ListID]] = append(imported[listNames[abb.ListID]], a)
 	}
 	return imported, nil
 }

@@ -4,11 +4,11 @@
 <title>UTX - Konverterade listor</title>
 </head>
 <body>
-<h1>Importerade listor</h1>
-Listor: 
+<h2>Konverterade förkortningslistor</h2>
+<p>Om allt fungerar korrekt så går dessa att importera i undertextningsprogrammet.</p>
 {{ range $key, $value := . }}
   <h3>{{ $key }}</h3>
-  <textarea>{{ range $i, $v := . }}{{ $v }}
+  <textarea rows="8" cols="40">{{ range $i, $v := . }}{{ $v }}
 {{end}}</textarea>
 {{ end }}
 </body>
