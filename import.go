@@ -81,7 +81,9 @@ func ImportProtype(buf []byte) (ShortformResponse, error) {
 			if !found && len(abbs) > 0 {
 				found = true
 			}
-			resp[list] = abbs
+			if len(abbs) > 0 {
+				resp[list] = abbs
+			}
 		}
 	}
 
