@@ -1,18 +1,11 @@
-<html>
-<head>
-<meta charset="UTF-8">
-  <title>UTX - Konverterade listor</title>
-  <link rel="stylesheet" href="/styles/style.css">
-</head>
-<body>
-  <div class="converter">
-  <h2>Konverterade förkortningslistor</h2>
+{{ define "content" }}
+  <div class="container">
+    <img src="/images/banner_converter.png" />
   <p>Om allt fungerar korrekt så går dessa att importera i undertextningsprogrammet.</p>
-  {{ range $key, $value := . }}
+  {{ range $key, $value := .Lists }}
     <h3>{{ $key }}</h3>
     <textarea rows="8" cols="40">{{ range $i, $v := . }}{{ $v }}
 {{end}}</textarea>
   {{ end }}
   </div>
-</body>
-</html>
+{{ end }}

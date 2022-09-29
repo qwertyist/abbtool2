@@ -12,11 +12,16 @@ import (
 )
 
 func ImportTextOnTop(dat []byte) (ShortformResponse, error) {
+	found := false
 	var totlist textOnTopJSON
 	var ac []string
 	var imported = make(map[string][]string)
 
-	json.Unmarshal(dat, &totlist)
+	err := json.Unmarshal(dat, &totlist)
+
+	if err != nil {
+		return nil, ErrUnmarshalTextOnTop
+	}
 
 	for abb, word := range totlist.Autocorrect.Default.List {
 		fmt.Println(abb, "=", word)
@@ -25,7 +30,7 @@ func ImportTextOnTop(dat []byte) (ShortformResponse, error) {
 
 	if ac == nil {
 		log.Println("Not a text-on-top export")
-		return nil, nil
+		return nil, ErrNotTextOnTopExport
 	}
 
 	for name, list := range totlist.Shortform {
@@ -37,13 +42,20 @@ func ImportTextOnTop(dat []byte) (ShortformResponse, error) {
 			abb := abb + "=" + word
 			abbs = append(abbs, abb)
 		}
+		if !found && len(abbs) > 0 {
+			found = true
+		}
 		imported[name] = abbs
 	}
 	imported["# Autokorrigering (Standard)"] = ac
-	return imported, nil
+	if found {
+		return imported, nil
+	}
+	return nil, ErrNoAbbs
 }
 
 func ImportProtype(buf []byte) (ShortformResponse, error) {
+	found := false
 	resp := make(map[string][]string)
 	zipReader, err := zip.NewReader(bytes.NewReader(buf), int64(len(buf)))
 
@@ -53,7 +65,9 @@ func ImportProtype(buf []byte) (ShortformResponse, error) {
 
 	for _, zipFile := range zipReader.File {
 		if strings.HasSuffix(zipFile.Name, "wordlist.dat") {
-			list := strings.TrimRight(zipFile.Name, "wordlist.dat")
+			listName := zipFile.Name[:len(zipFile.Name)-12]
+			list := toUTF8(listName)
+			log.Println("[", list, "]")
 			zipFile.SetPassword("SkrivTolk")
 			r, err := zipFile.Open()
 			if err != nil {
@@ -64,9 +78,17 @@ func ImportProtype(buf []byte) (ShortformResponse, error) {
 				return nil, fmt.Errorf("couldn't read bytes of wordlist.dat: %s", err.Error())
 			}
 			abbs := ParseProtypeDAT(wl)
+			if !found && len(abbs) > 0 {
+				found = true
+			}
 			resp[list] = abbs
 		}
 	}
+
+	if !found {
+		return nil, ErrNoAbbs
+	}
+
 	return resp, nil
 }
 
@@ -77,9 +99,11 @@ func ParseProtypeDAT(dat []byte) []string {
 	var abbs []string
 	var rawAbb, rawWord []rune
 	var length rune
-	length = rs[2]
-	//log.Printf("First length: %d\n", length)
-	//log.Printf("File length: %d\n", len(rs[2:])+1)
+	if len(rs) > 2 {
+		length = rs[2]
+	}
+	log.Printf("First length: %d\n", length)
+	log.Printf("File length: %d\n", len(rs[2:])+1)
 	for i := range rs[2:] {
 		if i+1 == len(rs[2:]) {
 			abb := string(rawAbb) + "=" + string(rawWord)
@@ -119,6 +143,8 @@ func ParseProtypeDAT(dat []byte) []string {
 }
 
 func ImportIllumiType(dat []byte) (ShortformResponse, error) {
+	foundList := false
+	foundAbb := false
 	log.Println("Import illumitype lists")
 	var illumiList illumiTypeJSON
 	var listNames = make(map[int]string)
@@ -127,13 +153,26 @@ func ImportIllumiType(dat []byte) (ShortformResponse, error) {
 	if err != nil {
 		return nil, fmt.Errorf("ImportIllumiType|Couldn't unmarshal:\n%s", err.Error())
 	}
+
+	if len(illumiList.Lists) > 0 {
+		foundList = true
+	}
+
 	for _, list := range illumiList.Lists {
 		listNames[list.ID] = list.Name
 	}
 	for _, abb := range illumiList.Abbreviations {
+		foundAbb = true
 		log.Println(abb)
 		a := abb.Abbreviation + "=" + abb.Word
 		imported[listNames[abb.ListID]] = append(imported[listNames[abb.ListID]], a)
+	}
+
+	if !foundList {
+		return nil, ErrNoLists
+	}
+	if !foundAbb {
+		return nil, ErrNoAbbs
 	}
 	return imported, nil
 }

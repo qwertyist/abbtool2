@@ -1,3 +1,5 @@
+abbtool2
 *.zip
 *.json
 go.sum
+*.lock
