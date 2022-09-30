@@ -3,6 +3,7 @@
   <meta charset="UTF-8">
   <title>UTX - Verktygslåda | {{ if .Title }}Hello{{else}}hehe{{ end }}</title>
   <link rel="stylesheet" href="styles/style.css">
+  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
   <meta name="viewport" content="width=device-width, initial-scale=1">
   {{ block "head" .}}{{ end }}
 </head>
