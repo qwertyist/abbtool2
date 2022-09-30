@@ -1,6 +1,6 @@
 {{ define "content" }}
   <div class="container">
-    <img src="/images/banner_converter.png" />
+    <img src="images/banner_converter.png" />
   <p>Om allt fungerar korrekt så går dessa att importera i undertextningsprogrammet.</p>
   {{ range $key, $value := .Lists }}
     <h3>{{ $key }}</h3>
