@@ -75,9 +75,14 @@ func checkUploadedFile(w http.ResponseWriter, r *http.Request) (ShortformRespons
 
 	log.Printf("Name: %#v\n", multiPartFileHeader.Filename)
 	fileType := multiPartFileHeader.Header.Get("Content-Type")
+	log.Println("type:", fileType)
 	buf := bytes.NewBuffer(nil)
 	if _, err := io.Copy(buf, file); err != nil {
 		return nil, err
+	}
+
+	if fileType == "application/x-zip-compressed" {
+		fileType = "application/zip"
 	}
 
 	switch fileType {
